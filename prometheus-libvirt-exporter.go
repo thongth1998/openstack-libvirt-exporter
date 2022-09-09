@@ -11,7 +11,7 @@ import (
 	"github.com/digitalocean/go-libvirt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/zhangjianweibj/prometheus-libvirt-exporter/libvirt_schema"
+	"github.com/thongth1998/openstack-libvirt-exporter/libvirt_schema"
 	"go.uber.org/zap"
 )
 
