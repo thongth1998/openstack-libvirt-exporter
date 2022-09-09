@@ -24,21 +24,18 @@ package procfs
 // > full avg10=0.00 avg60=0.13 avg300=0.96 total=8183134
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"strings"
-
-	"github.com/prometheus/procfs/internal/util"
 )
 
 const lineFormat = "avg10=%f avg60=%f avg300=%f total=%d"
 
-// PSILine is a single line of values as returned by `/proc/pressure/*`.
-//
-// The Avg entries are averages over n seconds, as a percentage.
-// The Total line is in microseconds.
+// PSILine is a single line of values as returned by /proc/pressure/*
+// The Avg entries are averages over n seconds, as a percentage
+// The Total line is in microseconds
 type PSILine struct {
 	Avg10  float64
 	Avg60  float64
@@ -47,9 +44,8 @@ type PSILine struct {
 }
 
 // PSIStats represent pressure stall information from /proc/pressure/*
-//
-// "Some" indicates the share of time in which at least some tasks are stalled.
-// "Full" indicates the share of time in which all non-idle tasks are stalled simultaneously.
+// Some indicates the share of time in which at least some tasks are stalled
+// Full indicates the share of time in which all non-idle tasks are stalled simultaneously
 type PSIStats struct {
 	Some *PSILine
 	Full *PSILine
@@ -59,21 +55,24 @@ type PSIStats struct {
 // resource from /proc/pressure/<resource>. At time of writing this can be
 // either "cpu", "memory" or "io".
 func (fs FS) PSIStatsForResource(resource string) (PSIStats, error) {
-	data, err := util.ReadFileNoStat(fs.proc.Path(fmt.Sprintf("%s/%s", "pressure", resource)))
+	file, err := os.Open(fs.proc.Path(fmt.Sprintf("%s/%s", "pressure", resource)))
 	if err != nil {
-		return PSIStats{}, fmt.Errorf("psi_stats: unavailable for %q: %w", resource, err)
+		return PSIStats{}, fmt.Errorf("psi_stats: unavailable for %s", resource)
 	}
 
-	return parsePSIStats(resource, bytes.NewReader(data))
+	defer file.Close()
+	return parsePSIStats(resource, file)
 }
 
-// parsePSIStats parses the specified file for pressure stall information.
-func parsePSIStats(resource string, r io.Reader) (PSIStats, error) {
+// parsePSIStats parses the specified file for pressure stall information
+func parsePSIStats(resource string, file io.Reader) (PSIStats, error) {
 	psiStats := PSIStats{}
+	stats, err := ioutil.ReadAll(file)
+	if err != nil {
+		return psiStats, fmt.Errorf("psi_stats: unable to read data for %s", resource)
+	}
 
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		l := scanner.Text()
+	for _, l := range strings.Split(string(stats), "\n") {
 		prefix := strings.Split(l, " ")[0]
 		switch prefix {
 		case "some":
