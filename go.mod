@@ -1,4 +1,4 @@
-module github.com/zhangjianweibj/prometheus-libvirt-exporter
+module github.com/thongth1998/openstack-libvirt-exporter
 
 go 1.16
 
