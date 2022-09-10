@@ -14,9 +14,9 @@ type Metadata struct {
 }
 
 type NovaInstance struct {
-	XMLName xml.Name  `xml:"instance"`
-	Name    string    `xml:"name"`
-	Owner   NovaOwner `xml:"owner"`
+	XMLName xml.Name   `xml:"instance"`
+	Name    string     `xml:"name"`
+	Owner   NovaOwner  `xml:"owner"`
 	Flavor  NovaFlavor `xml:"flavor"`
 }
 
@@ -62,6 +62,8 @@ type DiskTarget struct {
 type Interface struct {
 	Source InterfaceSource `xml:"source"`
 	Target InterfaceTarget `xml:"target"`
+	Mtu    InterfaceMtu    `xml:"mtu"`
+	Alias  InterfaceAlias  `xml:"alias"`
 }
 
 type InterfaceSource struct {
@@ -70,4 +72,11 @@ type InterfaceSource struct {
 
 type InterfaceTarget struct {
 	Device string `xml:"dev,attr"`
+}
+
+type InterfaceMtu struct {
+	Size string `xml:"size,attr"`
+}
+type InterfaceAlias struct {
+	Name string `xml:"name,attr"`
 }
