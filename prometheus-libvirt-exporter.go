@@ -51,7 +51,7 @@ var (
 		"Memory swap in of domain(the total amount of data read from swap space), in bytes.",
 		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host"},
 		nil)
-	libvirtDomainStatMemorySwapOutBytesDesc = prometheus.NewDesc(
+	vim = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_stat", "memory_swap_out_bytes"),
 		"Memory swap out of the domain(the total amount of memory written out to swap space), in bytes.",
 		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host"},
@@ -112,42 +112,42 @@ var (
 	libvirtDomainInterfaceRxBytesDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "receive_bytes_total"),
 		"Number of bytes received on a network interface, in bytes.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 	libvirtDomainInterfaceRxPacketsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "receive_packets_total"),
 		"Number of packets received on a network interface.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 	libvirtDomainInterfaceRxErrsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "receive_errors_total"),
 		"Number of packet receive errors on a network interface.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 	libvirtDomainInterfaceRxDropDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "receive_drops_total"),
 		"Number of packet receive drops on a network interface.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 	libvirtDomainInterfaceTxBytesDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "transmit_bytes_total"),
 		"Number of bytes transmitted on a network interface, in bytes.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 	libvirtDomainInterfaceTxPacketsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "transmit_packets_total"),
 		"Number of packets transmitted on a network interface.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 	libvirtDomainInterfaceTxErrsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "transmit_errors_total"),
 		"Number of packet transmit errors on a network interface.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 	libvirtDomainInterfaceTxDropDesc = prometheus.NewDesc(
 		prometheus.BuildFQName("libvirt", "domain_interface_stats", "transmit_drops_total"),
 		"Number of packet transmit drops on a network interface.",
-		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "target_device"},
+		[]string{"domain", "instanceName", "instanceId", "flavorName", "userName", "userId", "projectName", "projectId", "host", "source_bridge", "mtu_size", "target_device", "alias_name"},
 		nil)
 
 	domainState = map[libvirt_schema.DomainState]string{
@@ -394,7 +394,7 @@ func CollectDomainNetworkInfo(ch chan<- prometheus.Metric, l *libvirt.Libvirt, d
 			return err
 		}
 
-		promInterfaceLabels := append(promLabels, iface.Source.Bridge, iface.Target.Device)
+		promInterfaceLabels := append(promLabels, iface.Source.Bridge, iface.Mtu.Size, iface.Target.Device, iface.Alias.Name)
 		ch <- prometheus.MustNewConstMetric(
 			libvirtDomainInterfaceRxBytesDesc,
 			prometheus.CounterValue,
@@ -538,7 +538,7 @@ func main() {
 	defer logger.Sync()
 
 	var (
-		listenAddress = flag.String("web.listen-address", ":9000", "Address to listen on for web interface and telemetry.")
+		listenAddress = flag.String("web.listen-address", ":9177", "Address to listen on for web interface and telemetry.")
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 		libvirtURI    = flag.String("libvirt.uri", "/var/run/libvirt/libvirt-sock-ro", "Libvirt URI from which to extract metrics.")
 		driver        = flag.String("libvirt.driver", string(libvirt.QEMUSystem), fmt.Sprintf("Available drivers: %s (Default), %s, %s and %s ", libvirt.QEMUSystem, libvirt.QEMUSession, libvirt.XenSystem, libvirt.TestDefault))
