@@ -1,6 +1,6 @@
 module github.com/thongth1998/openstack-libvirt-exporter
 
-go 1.16
+go 1.18
 
 require (
 	github.com/digitalocean/go-libvirt v0.0.0-20210615174804-eaff166426e3
